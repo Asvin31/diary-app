@@ -1,7 +1,73 @@
 import ViewHeadlineIcon from '@mui/icons-material/ViewHeadline';
-import { Grid, InputAdornment, TextField, Typography, Button } from "@mui/material";
+import { Button, Grid, InputAdornment, TextField, Typography } from "@mui/material";
+import { useContext, useEffect, useState } from "react";
+import { DateContext } from "../context/DateContext";
 
 const AddEntry = ({ setDisplayContent }) => {
+    const [title, setTitle] = useState("");
+    const [content, setContent] = useState("");
+    const [id, setId] = useState(null);
+    const { contentDetails, setContentDetails,
+        setLoading, setSnackBar, setSeverity, setMessage, dateSelected
+        , setGetDetailsFlag } = useContext(DateContext);
+    useEffect(() => {
+        if (contentDetails.id !== null) {
+            setId(contentDetails.id);
+            const { title, content } = contentDetails.content;
+            setTitle(title);
+            setContent(content);
+        }
+    }, [])
+
+    const back = () => {
+        setContentDetails({
+            "id": null,
+            "content": null
+        })
+        setDisplayContent("home")
+    }
+
+    const saveContent = () => {
+        setLoading(true)
+        fetch("http://localhost:4545/save", {
+            method: 'POST',
+            credentials: 'include',
+            withCredentials: true,
+            crossDomain: true,
+            headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                "contentDate": dateSelected?.format("YYYY-MM-DD"),
+                "content": content,
+                "contentId": id,
+                "title": title
+            })
+        }).then(function (response) {
+            setLoading(false);
+            if (response.status === 200) {
+                setSnackBar(true);
+                setSeverity("success");
+                setMessage("Your data saved!");
+                back();
+                setGetDetailsFlag(true);
+            }
+            else {
+                response.json().then(function (result) {
+                    console.error(result);
+                })
+                setSnackBar(true);
+                setSeverity("error");
+                setMessage("Some Error Occurred");
+            }
+        }).catch(error => {
+            setLoading(false);
+            setSnackBar(true);
+            setSeverity("error");
+            setMessage("Some Error Occurred");
+        })
+    }
     return (
         <Grid item sm={12} xs={12} md={12} sx={{ margin: '0px 2%' }}>
             <Grid item sm={12} xs={12} md={12}>
@@ -10,8 +76,8 @@ const AddEntry = ({ setDisplayContent }) => {
             <Grid item sm={12} xs={12} md={12}>
                 <TextField
                     variant="outlined"
-                    // value={email}
-                    // onChange={(e) => setEmail(e.target.value)}
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
                     margin="dense"
                     fullWidth
                     InputProps={{
@@ -28,10 +94,9 @@ const AddEntry = ({ setDisplayContent }) => {
             </Grid>
             <Grid item sm={12} xs={12} md={12}>
                 <TextField
-                    type="password"
                     variant="outlined"
-                    // value={password}
-                    // onChange={(e) => setPassword(e.target.value)}
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
                     margin="dense"
                     fullWidth
                     multiline
@@ -50,7 +115,7 @@ const AddEntry = ({ setDisplayContent }) => {
                     <Button
                         fullWidth
                         variant='contained'
-                    // onClick={(e) => signIn(email, password)}
+                        onClick={(e) => saveContent()}
                     >
                         Save
                     </Button>
@@ -59,7 +124,7 @@ const AddEntry = ({ setDisplayContent }) => {
                     <Button
                         fullWidth
                         variant='contained'
-                        onClick={(e) => setDisplayContent("home")}
+                        onClick={(e) => back()}
                     >
                         Back
                     </Button>

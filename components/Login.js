@@ -3,7 +3,7 @@ import VpnKeyIcon from '@mui/icons-material/VpnKey';
 import { Button, Grid, InputAdornment, TextField, Typography } from "@mui/material";
 import { useState } from "react";
 
-function Login({ parent }) {
+function Login({ parent, signIn }) {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     return (
@@ -55,7 +55,7 @@ function Login({ parent }) {
                     disabled={email.length === 0 || password.length === 0}
                     fullWidth
                     variant='contained'
-                // onClick={(e) => signIn(email, password)}
+                    onClick={(e) => signIn(email, password)}
                 >
                     {parent}
                 </Button>

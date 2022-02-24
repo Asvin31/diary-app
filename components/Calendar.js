@@ -2,7 +2,7 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
 import { Button, Grid, Typography } from '@mui/material';
-import { blue, red, amber } from '@mui/material/colors';
+import { blue, red } from '@mui/material/colors';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -86,12 +86,57 @@ const Calendar = () => {
         open: false,
         dialogFor: ''
     });
-
-    const { dateSelected, storeDateSelected } = useContext(DateContext);
+    const { dateSelected, storeDateSelected, getDetailsFlag, setGetDetailsFlag,
+        setLoading, setSnackBar, setSeverity, setMessage, setDateDetails } = useContext(DateContext);
 
     useEffect(() => {
         storeDateSelected(dateObject);
     }, [dateObject])
+
+    const getDetails = () => {
+        setLoading(true)
+        setDateDetails({
+            "content": null,
+            "errorData": null
+        })
+        fetch("http://localhost:4545/getDetailsForDate/" + dateSelected?.format("YYYY-MM-DD"), {
+            credentials: 'include',
+            withCredentials: true,
+            crossDomain: true,
+        }).then(function (response) {
+            setLoading(false);
+            if (response.status === 200) {
+                response.json().then(function (result) {
+                    const { content, errorData } = result;
+                    setDateDetails({
+                        "content": content,
+                        "errorData": errorData
+                    })
+                })
+            }
+            else if (response.status === 204) {
+
+            }
+            else {
+                setSnackBar(true);
+                setSeverity("warning");
+                setMessage("No details found for the date");
+            }
+        }).catch(error => {
+            setLoading(false);
+            setSnackBar(true);
+            setSeverity("error");
+            setMessage("Some Error Occurred");
+        })
+    }
+    useEffect(() => {
+        getDetails();
+    }, [dateSelected])
+
+    if (getDetailsFlag) {
+        getDetails();
+        setGetDetailsFlag(false);
+    }
     /**
      * Getting weekdays short name for table header
      */
@@ -141,17 +186,20 @@ const Calendar = () => {
                     color: isDateSelected(d) ? "white" : "black"
 
                 }}
-                onClick={(e) => setDateObject(moment().set(
-                    {
-                        "date": d,
-                        "month": moment(dateObject).format("MMMM"),
-                        "year": moment(dateObject).format("YYYY")
-                    }
-                ))}
+                onClick={(e) => changeDate(d)}
             >
                 {d}
             </TableCell>
         )
+    }
+    const changeDate = (d) => {
+        setDateObject(moment().set(
+            {
+                "date": d,
+                "month": moment(dateObject).format("MMMM"),
+                "year": moment(dateObject).format("YYYY")
+            }
+        ))
     }
     var totalSlots = [...blankDays, ...monthDays];
     let rows = [];
